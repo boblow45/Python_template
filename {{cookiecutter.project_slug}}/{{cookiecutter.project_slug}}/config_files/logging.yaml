@@ -1,0 +1,40 @@
+---
+version: 1
+disable_existing_loggers: False
+formatters:
+    simple:
+        format: "%(asctime)s \t%(name)s \t%(levelname)s \t%(message)s"
+    console:
+        format: "%(levelname)s \t%(message)s"
+handlers:
+    console:
+        class: logging.StreamHandler
+        level: INFO
+        formatter: console
+        stream: ext://sys.stdout
+
+    info_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: DEBUG
+        formatter: simple
+        filename: logs/info.log
+        maxBytes: 10485760 # 10MB
+        backupCount: 20
+        encoding: utf8
+
+    error_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: ERROR
+        formatter: simple
+        filename: logs/errors.log
+        maxBytes: 10485760 # 10MB
+        backupCount: 20
+        encoding: utf8
+
+loggers:
+    # {{cookiecutter.project_slug}} needs to match the module name
+    {{cookiecutter.project_slug}}:
+        level: INFO
+        handlers: [console, info_file_handler, error_file_handler]
+        propagate: False
+...

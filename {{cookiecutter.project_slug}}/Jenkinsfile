@@ -1,0 +1,213 @@
+// ------------------------ Variables used by the Jenkins Script ------------------------
+// Defines the location of where to place the generated documentation
+env.MODULE_NAME = '{{ cookiecutter.project_slug }}'
+
+// Defines the people to e-mail when the build passes/fails 
+def eMailList = '$DEFAULT_RECIPIENTS, {{ cookiecutter.email }}'
+
+//Defines the email to send to users if the system passes 
+def successEMail = """
+${currentBuild.currentResult}: Job ${env.JOB_NAME} build ${env.BUILD_NUMBER}
+More info at: ${env.BUILD_URL}
+
+To see the changes and updates to the module please refer to the attached changelog.
+Documentation on this module can be found here: ${env.BUILD_URL}/Module_20Documentation/
+Examples of how to use the module can be found here: {{ cookiecutter.repo_location }}
+"""
+
+// Function gets the version number of this package from artifactory and checks that the new version has a larger number.
+// Returns true if the version number is larger, False if it is not.
+def checkVersionIsValid(){ 
+   
+   sh(script: """python -c 'import subprocess
+pypi_server = "${SERVER_LOC}"
+package = "${env.MODULE_NAME}"
+command = "pip search -i {} {}".format(pypi_server, package)
+new_version = "${VERSION_NUM}"
+
+try:
+	cmd_ans = str(subprocess.check_output(command, shell=True))
+	server_version = list(map(int, cmd_ans[cmd_ans.find("(") + 1:cmd_ans.find(")")].split(".")))
+	package_version = list(map(int, new_version.split(".")))
+except:
+	exit(0)
+
+print("Server version is {}".format(server_version))
+print("Package version is {}".format(package_version))
+
+for ser_ver, pac_ver in zip(list(server_version), list(package_version)):
+	if pac_ver > ser_ver:
+		print("Package version number is larger")
+		exit(0)
+	elif pac_ver < ser_ver:
+		print("Server number is larger")
+		exit(1)
+		break
+	else:
+		pass
+else:
+	print("Server number is larger")
+	exit(1)
+'""")
+}
+
+// ------------------------------ Jenkins Pipeline Script ----------------------------
+pipeline {
+    // Define the jenkins node to run the build on 
+	agent { 
+        docker{
+			image 'python:3.6'
+			label 'docker'
+        }
+	}
+
+    // Defines the trigger methods which will cause this script to run
+    triggers {
+        pollSCM('H/5 * * * 1-5')
+    }
+
+    options {
+        // skipDefaultCheckout(true)
+        // Keep the 10 most recent builds
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+    }
+
+    environment {
+        VERSION_NUM = '0.0.0'
+		SERVER_LOC = ''
+    }
+
+    // Define the pipeline steps which will run when this script is triggered 
+    stages {
+
+        // Setup enviroment, Install all the modules needed for this module to build and deploy
+        stage('Build environment') {
+			steps {
+				sh "make install-dev"
+
+				script {
+					VERSION_NUM = sh(returnStdout: true, script: "python -c 'import ${env.MODULE_NAME}; print(${env.MODULE_NAME}.__version__)'").trim()
+				}
+			}
+        }
+
+        // Run tests, report results and coverage.
+        stage('Test environment') {
+            steps {
+				sh '''
+					make test
+					'''
+
+				// Save the test coverage for review later 
+				publishHTML (target: [
+					allowMissing: false,
+					alwaysLinkToLastBuild: false,
+					keepAll: false,
+					reportDir: './tests/htmlcov',
+					reportFiles: 'index.html',
+					reportName: "Test Coverage"
+				])
+            }
+        }
+
+        // Build python module documentation and save it.
+		stage('Build Documentation') {
+            steps {
+				echo 'Build Documentation'
+				sh """
+					make docs
+					"""
+                
+                // Save the documentation for later use.
+                publishHTML (target: [
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: false,
+                            keepAll: true,
+                            reportDir: './docs/_build/html',
+                            reportFiles: 'index.html',
+                            reportName: "Module Documentation"
+                    ])
+            }
+        }
+
+		// Test to ensure that Users have increased version number of package before it can be merged
+		stage("Test Module Version"){
+        	when {
+                branch 'PR-*'  
+            }
+
+			steps{
+
+				// This will error out if version number of package is the same or less. Need to add a message to the console 
+				checkVersionIsValid()
+			}
+		}
+
+        // Deploy python wheel to artifactory (only runs on master branch)
+        stage("Deploy module") {
+            when {
+				branch 'master'
+			}
+
+			steps {
+				sh "make dist"
+				rtUpload (
+					serverId: '<server ID>',
+					failNoOp: true,
+					spec: """{
+						"files": [
+							{
+							"pattern": "dist/*${VERSION_NUM}*",
+							"target": "<url>"
+							}
+						]
+					}""",
+				)
+			}
+        }
+    }
+
+    // The following section is ran after the above pipeline has finished weither it passes or fails 
+    post {
+
+        // The following section will be preformed if the pipeline runs without issues 
+		success {
+	            echo 'The project build and deployed correctly!'
+
+                emailext(subject: "Jenkins Build ${currentBuild.currentResult}: Job ${env.JOB_NAME}",
+					     attachmentsPattern: '**/Changelog.md',
+						 body: "${successEMail}",
+						recipientProviders: [
+							[$class: 'CulpritsRecipientProvider'],
+							[$class: 'DevelopersRecipientProvider'],
+							[$class: 'RequesterRecipientProvider'],
+						],
+						replyTo: '$DEFAULT_REPLYTO',
+						to: eMailList,
+					)
+		}
+
+        // The following section will run if an error has occur. It will inform the admin and the person who caused the issue
+		failure {
+			echo 'The project build and deployed Failed!'
+
+			emailext( subject: '$DEFAULT_SUBJECT',
+				body: '$DEFAULT_CONTENT',
+				recipientProviders: [
+					[$class: 'CulpritsRecipientProvider'],
+					[$class: 'DevelopersRecipientProvider'],
+					[$class: 'RequesterRecipientProvider']
+				],
+				replyTo: '$DEFAULT_REPLYTO',
+				to: eMailList,
+			)
+		}
+
+        // This section will run regardless of what has happed.
+        always {
+            archiveArtifacts artifacts: 'dist/**/*.whl, dist/**/*.tar.gz, tests/.coverage, requirements.txt', fingerprint: true
+            junit 'tests/pytest_output/test_results.xml'
+        }
+    }
+}
