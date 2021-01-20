@@ -62,7 +62,7 @@ Ready to contribute? Here's how to set up `{{ cookiecutter.project_slug }}` for 
 1. Fork the `{{ cookiecutter.project_slug }}` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone {{ cookiecutter.git clone link }}
+    $ git clone {{ cookiecutter.repo_location}}
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 

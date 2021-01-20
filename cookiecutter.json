@@ -1,14 +1,16 @@
 {
   "full_name": "Cillian O'Brien",
   "email": "cillianobrien01@gmail.com",
-  "github_username": "boblow45",
+  "github_username": "cobrien01",
   "project_name": "Python Boilerplate",
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}",
   "project_short_description": "Python Boilerplate contains all the boilerplate you need to create a Python package.",
   "repo_location": "Insert",
-  "git clone link": "",
   "version": "0.1.0",
-  "use_pytest": "n",
+  "use_pytest": [
+    "y",
+    "n"
+  ],
   "Issue_tracker_loaction": "Insert",
   "command_line_interface": [
     "Click",
@@ -20,6 +22,7 @@
     "BSD license",
     "ISC license",
     "Apache Software License 2.0",
-    "GNU General Public License v3"
-  ],
+    "GNU General Public License v3",
+    "Not open source"
+  ]
 }
