@@ -18,12 +18,11 @@ help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 clean:  ## remove all test, coverage artifacts
-	rm -f .coverage
-	rm -fr htmlcov/
 	rm -fr .pytest_cache
 	rm -fr __pycache__
 	rm -fr pytest_output
 
 test: clean
 	python -m pytest --verbose
-	python -m coverage html
+	coverage html
+	coverage xml

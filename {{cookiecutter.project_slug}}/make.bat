@@ -10,7 +10,7 @@ if /I %1 == release goto :release
 if /I %1 == install goto :install
 if /I %1 == install-dev goto :install-dev
 
-SET SERVER_LOC=
+@ REM SET SERVER_LOC=
 
 goto :eof ::can be ommited to run the `default` function similarly to makefiles
 
@@ -61,7 +61,8 @@ flake8 {{cookiecutter.project_slug}} tests
 goto :eof
 
 :dist
-pip-compile --extra-index-url %SERVER_LOC% 
+@ REM pip-compile --extra-index-url %SERVER_LOC% 
+pip-compile
 pip install wheel 
 python setup.py sdist
 python setup.py bdist_wheel
@@ -72,11 +73,13 @@ twine upload dist/*
 goto :eof
 
 :install
-pip install --extra-index-url %SERVER_LOC% -e .
+@ REM pip install --extra-index-url %SERVER_LOC% -e .
+pip install -e .
 goto :eof
 
 :install-dev
-pip install --extra-index-url %SERVER_LOC% -e .[dev]
+@ REM pip install --extra-index-url %SERVER_LOC% -e .[dev]
+pip install -e .[dev]
 goto :eof
 
 REM -----------------------------------------------------------------------------

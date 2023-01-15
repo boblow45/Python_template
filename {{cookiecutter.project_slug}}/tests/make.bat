@@ -26,15 +26,15 @@ ECHO test: test the module and generate coverage report
 goto :eof
 
 :clean
-del /f/s/q .coverage
-rmdir /q/s htmlcov/
 rmdir /q/s pytest_output/
 rmdir /q/s .pytest_cache/
+rmdir /q/s __pycache__
 goto :eof
 
 :test
 python -m pytest --verbose
-python -m coverage html
+coverage html
+coverage xml
 goto :eof
 
 

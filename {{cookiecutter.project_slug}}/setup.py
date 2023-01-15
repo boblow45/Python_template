@@ -21,7 +21,7 @@ requirements = ["pyyaml",
 # List of dependencies which are requireded for the developement of this module. 
 # Examples are framework for testing, pytest. Documentation module sphinx, deployment package 
 dev_requirements = [
-{%- if cookiecutter.use_pytest == 'y' %}"pytest-runner", "pytest>=3", "pytest-cov",{% endif %} 
+{%- if cookiecutter.use_pytest == 'y' %}"pytest-runner", "pytest>=3", "pytest-cov", "pytest-html",{% endif %} 
     "sphinx",
 
     "tox",

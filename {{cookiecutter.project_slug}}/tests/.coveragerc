@@ -1,0 +1,16 @@
+[run]
+branch = True
+data_file = pytest_output/.coverage
+
+[paths]
+source =
+    ./../{{cookiecutter.project_slug}}
+
+[report]
+ignore_errors = True
+
+[html]
+directory = pytest_output/reports/coverage/html_dir
+
+[xml]
+output = pytest_output/reports/coverage/coverage.xml
