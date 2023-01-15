@@ -3,14 +3,8 @@ if /I %1 == default goto :default
 if /I %1 == clean goto :clean
 if /I %1 == help goto :help
 if /I %1 == test goto :test
-if /I %1 == lint goto :lint
-if /I %1 == docs goto :docs
-if /I %1 == dist goto :dist
-if /I %1 == release goto :release
-if /I %1 == install goto :install
-if /I %1 == install-dev goto :install-dev
 
-SET SERVER_LOC=
+@REM SET SERVER_LOC=
 
 goto :eof ::can be ommited to run the `default` function similarly to makefiles
 
@@ -26,9 +20,9 @@ ECHO test: test the module and generate coverage report
 goto :eof
 
 :clean
-rmdir /q/s pytest_output/
-rmdir /q/s .pytest_cache/
-rmdir /q/s __pycache__
+if exist pytest_output rmdir /q/s pytest_output
+if exist .pytest_cache rmdir /q/s .pytest_cache
+if exist __pycache__ rmdir /q/s __pycache__
 goto :eof
 
 :test

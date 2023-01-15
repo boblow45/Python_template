@@ -32,13 +32,14 @@ ECHO install-dev: install module with packages all requiredments and development
 goto :eof
 
 :clean
-del /f/s/q *.egg-info
-for /d /r ./{{cookiecutter.project_slug}} %%d in (__pycache__) do @if exist "%%d" rd /s/q "%%d"
-for /d /r ./tests %%d in (__pycache__) do @if exist "%%d" rd /s/q "%%d"
-for /d /r . %d in (__pycache__) do @if exist "%%d" rd /s/q "%%d"
-rmdir /q/s build/
-rmdir /q/s dist/
-rmdir /q/s .eggs/
+if exist QRCP.egg-info del /f/s/q QRCP.egg-info
+@REM for /d /r ./QRCP %%d in (__pycache__) do @if exist "%%d" rd /s/q "%%d"
+@REM for /d /r ./tests %%d in (__pycache__) do @if exist "%%d" rd /s/q "%%d"
+@REM for /d /r . %d in (__pycache__) do @if exist "%%d" rd /s/q "%%d"
+if exist build rmdir /q/s build
+if exist dist rmdir /q/s dist
+if exist .eggs rmdir /q/s .eggs
+
 cd tests
 call make.bat clean
 cd ..
